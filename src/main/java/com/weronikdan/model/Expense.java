@@ -20,7 +20,7 @@ public class Expense {
         return amount;
     }
 
-    /* Constructors */
+    /* Constructor */
     public Expense(String description, String category, double amount) {
         this.description = description;
         this.category = category;
