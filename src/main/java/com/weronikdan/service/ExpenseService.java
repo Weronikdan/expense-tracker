@@ -35,7 +35,7 @@ public class ExpenseService {
 
     public void printAll() {
         System.out.println("------------------ All Expenses ------------------");
-        for(int i = 0; i<expenses.toArray().length; i++) {
+        for(int i = 0; i<expenses.size(); i++) {
             /* Ex. %-20s left aligned string, padded to 20 char */
             System.out.printf("%d. %-20s %-15s £%.2f%n", i + 1, expenses.get(i).getDescription(), expenses.get(i).getCategory(), expenses.get(i).getAmount());
         }
@@ -58,6 +58,20 @@ public class ExpenseService {
                 .mapToDouble(Expense::getAmount)
                 .sum();
         System.out.printf("%-15s £%.2f%n", "TOTAL", total);
+    }
+
+    public void printByCategory(String category) {
+        List<Expense> filtered = expenses.stream()
+                .filter(e -> e.getCategory().equalsIgnoreCase(category))
+                .toList();
+
+        if (filtered.isEmpty()) {
+            System.out.println("No expenses found for category: " + category);
+            return;
+        }
+
+        filtered.forEach(e -> System.out.printf("%d. %-20s %-15s £%.2f%n",
+                expenses.indexOf(e) + 1, e.getDescription(), e.getCategory(), e.getAmount()));
     }
 
 

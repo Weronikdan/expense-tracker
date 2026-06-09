@@ -19,7 +19,8 @@ public class Main {
             System.out.println("2. View all");
             System.out.println("3. View summary by category");
             System.out.println("4. Delete expense");
-            System.out.println("5. Quit");
+            System.out.println("5. View by Category");
+            System.out.println("6. Quit");
             System.out.print("Choice: ");
             String choice = scanner.nextLine();
             System.out.println();
@@ -57,6 +58,15 @@ public class Main {
                     }
                     break;
                 case "5":
+                    System.out.print("Enter category: ");
+                    try {
+                        String userInput = scanner.nextLine();
+                        expenseService.printByCategory(userInput);
+                    } catch (NumberFormatException e){
+                        System.out.println("Invalid value. Please try again. ");
+                    }
+                    break;
+                case "6":
                     System.exit(0);
                 default:
                     System.out.println("Invalid option. Please enter one of the options 1-5.");
