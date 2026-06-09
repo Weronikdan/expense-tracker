@@ -27,6 +27,10 @@ public class Expense {
         this.amount = amount;
     }
 
+    @Override
+    public String toString() {
+        return description + "," + category + "," + amount;
+    }
 
 
 }

@@ -1,10 +1,13 @@
 package com.weronikdan;
 
 import com.weronikdan.service.ExpenseService;
+
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
+    static void main(String[] args) throws Exception {
+
         ExpenseService expenseService = new ExpenseService();
         Scanner scanner = new Scanner (System.in);
 
@@ -23,13 +26,13 @@ public class Main {
                     String category = scanner.nextLine();
                     System.out.print("Enter the amount: ");
                     try {
-                        double amount = Double.parseDouble(scanner.nextLine());
+                        double amount = Double.parseDouble(scanner.nextLine().replace(",", "."));
                         expenseService.addExpense(description, category, amount);
                     } catch (NumberFormatException e){
                         System.out.println("Invalid amount, please enter a number.");
-                        break;
+                    } catch (IOException e){
+                        System.out.println("Error saving expense: " + e.getMessage());
                     }
-
                     break;
                 case "2":
                     expenseService.printAll();

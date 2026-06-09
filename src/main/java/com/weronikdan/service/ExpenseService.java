@@ -1,22 +1,25 @@
 package com.weronikdan.service;
 
 import com.weronikdan.model.Expense;
+import com.weronikdan.storage.FileStorage;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.io.IOException;
 
 public class ExpenseService {
 
     /* Fields */
+    private FileStorage storage = new FileStorage();
     private List<Expense> expenses;
 
     /* Constructor */
-    public ExpenseService() {
-        this.expenses = new ArrayList<>();
+    public ExpenseService() throws IOException {
+        this.expenses = storage.load();
     }
 
-    public void addExpense(String description, String category, double amount) {
+    public void addExpense(String description, String category, double amount) throws IOException {
         this.expenses.add(new Expense(description, category, amount));
+        storage.save(this.expenses);
     }
 
     public void printAll() {
