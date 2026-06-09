@@ -1,18 +1,46 @@
 package com.weronikdan;
 
 import com.weronikdan.service.ExpenseService;
-
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
         ExpenseService expenseService = new ExpenseService();
+        Scanner scanner = new Scanner (System.in);
 
-        expenseService.addExpense("Coffee", "Food", 3.5);
-        expenseService.addExpense("Tea", "Food", 2.5);
-        expenseService.addExpense("Train ticket", "Transport", 24.0);
-        expenseService.addExpense("Gas", "Transport", 53.0);
+        while (true) {
+            System.out.println("1. Add expense");
+            System.out.println("2. View all");
+            System.out.println("3. Quit");
+            System.out.print("Choice: ");
+            String choice = scanner.nextLine();
 
-        expenseService.printAll();
+            switch (choice) {
+                case "1":
+                    System.out.print("Enter an expense description: ");
+                    String description = scanner.nextLine();
+                    System.out.print("Enter a category: ");
+                    String category = scanner.nextLine();
+                    System.out.print("Enter the amount: ");
+                    try {
+                        double amount = Double.parseDouble(scanner.nextLine());
+                        expenseService.addExpense(description, category, amount);
+                    } catch (NumberFormatException e){
+                        System.out.println("Invalid amount, please enter a number.");
+                        break;
+                    }
+
+                    break;
+                case "2":
+                    expenseService.printAll();
+                    break;
+                case "3":
+                    System.exit(0);
+
+                default:
+                    System.out.println("Invalid option. Please enter one of the options 1-3.");
+            }
+        }
 
     }
 }
