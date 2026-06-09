@@ -33,6 +33,11 @@ public class ExpenseService {
         storage.save(this.expenses);
     }
 
+    public List<Expense> getExpenses() {
+        return expenses;
+    }
+
+
     public void printAll() {
         System.out.println("------------------ All Expenses ------------------");
         for(int i = 0; i<expenses.size(); i++) {
