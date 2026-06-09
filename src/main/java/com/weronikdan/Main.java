@@ -12,12 +12,17 @@ public class Main {
         Scanner scanner = new Scanner (System.in);
 
         while (true) {
+            System.out.println();
+            System.out.println();
+            System.out.println("------------ Menu ------------");
             System.out.println("1. Add expense");
             System.out.println("2. View all");
             System.out.println("3. View summary by category");
-            System.out.println("4. Quit");
+            System.out.println("4. Delete expense");
+            System.out.println("5. Quit");
             System.out.print("Choice: ");
             String choice = scanner.nextLine();
+            System.out.println();
 
             switch (choice) {
                 case "1":
@@ -42,10 +47,19 @@ public class Main {
                     expenseService.printSummary();
                     break;
                 case "4":
+                    expenseService.printAll();
+                    System.out.print("Enter the number to delete: ");
+                    try {
+                        int toDelete = Integer.parseInt(scanner.nextLine());
+                        expenseService.deleteExpense(toDelete);
+                    } catch (NumberFormatException e){
+                        System.out.println("Invalid value. Please try again. ");
+                    }
+                    break;
+                case "5":
                     System.exit(0);
-
                 default:
-                    System.out.println("Invalid option. Please enter one of the options 1-3.");
+                    System.out.println("Invalid option. Please enter one of the options 1-5.");
             }
         }
 

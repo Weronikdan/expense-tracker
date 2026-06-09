@@ -24,14 +24,26 @@ public class ExpenseService {
         storage.save(this.expenses);
     }
 
+    public void deleteExpense(int index) throws IOException {
+        if (index < 1 || index > expenses.size()) {
+            System.out.println("Invalid expense number.");
+            return;
+        }
+        this.expenses.remove(index - 1);
+        storage.save(this.expenses);
+    }
+
     public void printAll() {
-        for(Expense expense : expenses ) {
+        System.out.println("------------------ All Expenses ------------------");
+        for(int i = 0; i<expenses.toArray().length; i++) {
             /* Ex. %-20s left aligned string, padded to 20 char */
-            System.out.printf("%-20s %-15s £%.2f%n", expense.getDescription(), expense.getCategory(), expense.getAmount());
+            System.out.printf("%d. %-20s %-15s £%.2f%n", i + 1, expenses.get(i).getDescription(), expenses.get(i).getCategory(), expenses.get(i).getAmount());
         }
     }
 
     public void printSummary() {
+        System.out.println("------ Summary by Category ------");
+
         Map<String, Double> categorySummary = expenses.stream()
                 .collect(Collectors.groupingBy(
                         Expense::getCategory,
