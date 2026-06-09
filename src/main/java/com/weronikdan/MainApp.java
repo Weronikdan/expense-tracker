@@ -4,19 +4,17 @@ import com.weronikdan.model.Expense;
 import com.weronikdan.service.ExpenseService;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 
 import java.io.IOException;
+import java.util.List;
 
 /*
-*   Hierarchical representation:
+*   Hierarchy:
 *       Stage (window)
 *          └── Scene (contents)
 *                  └── VBox (layout)
@@ -26,13 +24,37 @@ import java.io.IOException;
 
 public class MainApp extends Application {
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
 
         ExpenseService expenseService = new ExpenseService();
+        final String[] activeFilter = {""};
 
-        /* Create the table */
+        /* BUILDERS */
 
+        TableView<Expense> table = buildTable(expenseService);
+        /* HBox is a horizontal box; places elements next to eachother. 10 is the spacing in px between items. */
+        HBox inputRow = buildInputRow(expenseService, table, activeFilter);
+        HBox filterRow = buildFilterRow(expenseService, table, activeFilter);
+        Button deleteButton = buildDeleteButton(expenseService, table, activeFilter);
+
+        /* Vbox is a vertical box; stacks elements on top of eachother */
+        VBox root = new VBox(10, inputRow, filterRow, table, deleteButton);
+
+        /* Window setup */
+        Scene scene = new Scene(root, 600, 400);
+        stage.setTitle("Expense Tracker");
+        stage.setScene(scene); /* put the scene inside the window */
+        stage.show(); /* Actually show the window */
+    }
+
+    /* builders */
+
+    private TableView<Expense> buildTable(ExpenseService expenseService) {
         /* Create an empty table to hold Expense objects; empty grid */
         TableView<Expense> table = new TableView<>();
 
@@ -40,11 +62,11 @@ public class MainApp extends Application {
         TableColumn<Expense, String> descCol = new TableColumn<>("Description");
 
         /* Specify how to get its value from an expense object:
-        *  e = one row (a cell data object)
-        *  e.getValue() = gets the actual Expense object for that row
-        * .getDescription() = gets the description from that expense
-        * new SimpleStringProperty(...) = wraps it in a JavaFX property object that the table understands
-        * */
+         *  e = one row (a cell data object)
+         *  e.getValue() = gets the actual Expense object for that row
+         * .getDescription() = gets the description from that expense
+         * new SimpleStringProperty(...) = wraps it in a JavaFX property object that the table understands
+         * */
         descCol.setCellValueFactory(e -> new SimpleStringProperty(e.getValue().getDescription()));
 
         TableColumn<Expense, String> catCol = new TableColumn<>("Category");
@@ -60,6 +82,10 @@ public class MainApp extends Application {
         /* Fill the table with the expenses from Expense service on initial load */
         table.getItems().addAll(expenseService.getExpenses());
 
+        return table;
+    }
+
+    private HBox buildInputRow(ExpenseService expenseService, TableView<Expense> table, String[] activeFilter) {
         /* Input fields */
         TextField descField = new TextField();
         descField.setPromptText("Description");
@@ -85,8 +111,7 @@ public class MainApp extends Application {
                 expenseService.addExpense(desc, cat, amount);
 
                 /* Refresh the table with new ExpenseService items*/
-                table.getItems().clear();
-                table.getItems().addAll(expenseService.getExpenses());
+                refreshTable(table, expenseService, activeFilter[0]);
 
                 /* Clear input fields */
                 descField.clear();
@@ -94,12 +119,62 @@ public class MainApp extends Application {
                 amountField.clear();
 
             } catch (NumberFormatException ex) {
-                System.out.println("Invalid amount");
+                showAlert("Invalid input", "Please fill in all fields.");
             } catch (IOException ex) {
-                System.out.println("Error saving: " + ex.getMessage());
+                showAlert("Error", "Error saving: " + ex.getMessage());
             }
         });
 
+        /* HBox is a horizontal box; places elements next to each other. 10 is the spacing in px between items. */
+        return new HBox(10, descField, catField, amountField, addButton);
+    }
+
+
+    private HBox buildFilterRow(ExpenseService expenseService, TableView<Expense> table, String[] activeFilter) {
+
+        TextField filterField = new TextField();
+        filterField.setPromptText("Filter Category");
+
+        Button filterButton = new Button("Filter");
+
+        /* Event handler - called when filter button is clicked */
+        filterButton.setOnAction(e -> {
+            try {
+                /* user input */
+                String filter = filterField.getText();
+
+                List<Expense> filtered = expenseService.getExpensesByCategory(filter);
+                if (filtered.isEmpty()) {
+                    showAlert("No results", "No expenses found for: " + filter);
+                    return;
+                }
+                activeFilter[0] = filter;
+                refreshTable(table, expenseService, filter);
+
+                /* Clear input fields */
+                filterField.clear();
+
+            } catch (Exception ex) {
+                showAlert("Error", "Something went wrong: " + ex.getMessage());
+            }
+        });
+
+        /* CLEAR FILTER  */
+
+        Button clearButton = new Button("Clear");
+
+        /* Event handler - called when clear button is clicked */
+        clearButton.setOnAction(e -> {
+            table.getItems().clear();
+            table.getItems().addAll(expenseService.getExpenses());
+            activeFilter[0] = "";
+        });
+
+        return new HBox(10, filterField, filterButton, clearButton);
+    }
+
+
+    private Button buildDeleteButton(ExpenseService expenseService, TableView<Expense> table, String[] activeFilter) {
         Button deleteButton = new Button("Delete");
 
         /* Event handler - called when delete button is clicked */
@@ -108,36 +183,38 @@ public class MainApp extends Application {
                 Expense selected = table.getSelectionModel().getSelectedItem();
 
                 if (selected == null) {
-                    System.out.println("No expense selected.");
+                    showAlert("Error", "No expense selected. Select an expense to delete. ");
                     return;
                 }
 
                 /* Delete an expense in ExpenseService*/
                 expenseService.deleteExpense(selected);
-                table.getItems().clear();
-                table.getItems().addAll(expenseService.getExpenses());
+                refreshTable(table, expenseService, activeFilter[0]);
 
             } catch (IOException ex) {
-                System.out.println("Error saving: " + ex.getMessage());
+                showAlert("Error", "Error deleting: " + ex.getMessage());
+
             }
         });
-
-        /* Layout */
-
-        /* Hbox is a horizontal box; places elements next to eachother. 10 is the spacing in px between items. */
-        HBox inputRow = new HBox(10, descField, catField, amountField, addButton);
-
-        /* Vbox is a vertical box; stacks elements on top of eachother */
-        VBox root = new VBox(10, inputRow, table, deleteButton);
-
-        /* Window setup */
-        Scene scene = new Scene(root, 600, 400);
-        stage.setTitle("Expense Tracker");
-        stage.setScene(scene); /* put the scene inside the window */
-        stage.show(); /* Actually show the window */
+        return deleteButton;
     }
 
-    public static void main(String[] args) {
-        launch(args);
+
+    /* Helpers */
+    private void refreshTable(TableView<Expense> table, ExpenseService expenseService, String activeFilter) {
+        table.getItems().clear();
+        if (activeFilter.isEmpty()) {
+            table.getItems().addAll(expenseService.getExpenses());
+        } else {
+            table.getItems().addAll(expenseService.getExpensesByCategory(activeFilter));
+        }
     }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
 }

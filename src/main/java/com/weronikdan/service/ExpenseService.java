@@ -84,6 +84,11 @@ public class ExpenseService {
                 expenses.indexOf(e) + 1, e.getDescription(), e.getCategory(), e.getAmount()));
     }
 
+    public List<Expense> getExpensesByCategory(String category) {
+        return expenses.stream()
+                .filter(e -> e.getCategory().equalsIgnoreCase(category))
+                .toList();
+    }
 
 
 }
