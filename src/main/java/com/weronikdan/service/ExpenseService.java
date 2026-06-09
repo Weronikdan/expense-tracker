@@ -33,6 +33,11 @@ public class ExpenseService {
         storage.save(this.expenses);
     }
 
+    public void deleteExpense(Expense expense) throws IOException {
+        expenses.remove(expense);
+        storage.save(expenses);
+    }
+
     public List<Expense> getExpenses() {
         return expenses;
     }

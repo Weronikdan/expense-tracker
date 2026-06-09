@@ -72,7 +72,7 @@ public class MainApp extends Application {
 
         Button addButton = new Button("Add");
 
-        /* Event handler - called when button is clicked */
+        /* Event handler - called when add button is clicked */
         addButton.setOnAction(e -> {
             try {
 
@@ -100,13 +100,35 @@ public class MainApp extends Application {
             }
         });
 
+        Button deleteButton = new Button("Delete");
+
+        /* Event handler - called when delete button is clicked */
+        deleteButton.setOnAction(e -> {
+            try {
+                Expense selected = table.getSelectionModel().getSelectedItem();
+
+                if (selected == null) {
+                    System.out.println("No expense selected.");
+                    return;
+                }
+
+                /* Delete an expense in ExpenseService*/
+                expenseService.deleteExpense(selected);
+                table.getItems().clear();
+                table.getItems().addAll(expenseService.getExpenses());
+
+            } catch (IOException ex) {
+                System.out.println("Error saving: " + ex.getMessage());
+            }
+        });
+
         /* Layout */
 
         /* Hbox is a horizontal box; places elements next to eachother. 10 is the spacing in px between items. */
         HBox inputRow = new HBox(10, descField, catField, amountField, addButton);
 
         /* Vbox is a vertical box; stacks elements on top of eachother */
-        VBox root = new VBox(10, inputRow, table);
+        VBox root = new VBox(10, inputRow, table, deleteButton);
 
         /* Window setup */
         Scene scene = new Scene(root, 600, 400);
