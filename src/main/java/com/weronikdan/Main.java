@@ -14,7 +14,8 @@ public class Main {
         while (true) {
             System.out.println("1. Add expense");
             System.out.println("2. View all");
-            System.out.println("3. Quit");
+            System.out.println("3. View summary by category");
+            System.out.println("4. Quit");
             System.out.print("Choice: ");
             String choice = scanner.nextLine();
 
@@ -38,6 +39,9 @@ public class Main {
                     expenseService.printAll();
                     break;
                 case "3":
+                    expenseService.printSummary();
+                    break;
+                case "4":
                     System.exit(0);
 
                 default:

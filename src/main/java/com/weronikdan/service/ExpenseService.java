@@ -5,6 +5,8 @@ import com.weronikdan.storage.FileStorage;
 
 import java.util.List;
 import java.io.IOException;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ExpenseService {
 
@@ -28,5 +30,24 @@ public class ExpenseService {
             System.out.printf("%-20s %-15s £%.2f%n", expense.getDescription(), expense.getCategory(), expense.getAmount());
         }
     }
+
+    public void printSummary() {
+        Map<String, Double> categorySummary = expenses.stream()
+                .collect(Collectors.groupingBy(
+                        Expense::getCategory,
+                        Collectors.summingDouble(Expense::getAmount)
+                ));
+
+        categorySummary.forEach((category, total) -> {
+            System.out.printf("%-15s £%.2f%n", category, total);
+        });
+
+        double total = expenses.stream()
+                .mapToDouble(Expense::getAmount)
+                .sum();
+        System.out.printf("%-15s £%.2f%n", "TOTAL", total);
+    }
+
+
 
 }
