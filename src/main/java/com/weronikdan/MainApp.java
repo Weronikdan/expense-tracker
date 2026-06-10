@@ -4,12 +4,12 @@ import com.weronikdan.model.Expense;
 import com.weronikdan.service.ExpenseService;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.layout.HBox;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -24,6 +24,11 @@ import java.util.List;
 
 public class MainApp extends Application {
 
+    private ExpenseService expenseService;
+    private TableView<Expense> table;
+    private final String[] activeFilter = {""};
+    private PieChart chart;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -31,22 +36,25 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
 
-        ExpenseService expenseService = new ExpenseService();
-        final String[] activeFilter = {""};
+        expenseService = new ExpenseService();
+        table = buildTable();
+        chart = buildPieChart();
 
-        /* BUILDERS */
+        /* HBox is a horizontal box; places elements next to each other. 10 is the spacing in px between items. */
+        HBox inputRow = buildInputRow();
+        HBox filterRow = buildFilterRow();
+        Button deleteButton = buildDeleteButton();
 
-        TableView<Expense> table = buildTable(expenseService);
-        /* HBox is a horizontal box; places elements next to eachother. 10 is the spacing in px between items. */
-        HBox inputRow = buildInputRow(expenseService, table, activeFilter);
-        HBox filterRow = buildFilterRow(expenseService, table, activeFilter);
-        Button deleteButton = buildDeleteButton(expenseService, table, activeFilter);
+        /* Vbox is a vertical box; stacks elements on top of each other */
+        VBox root = new VBox(10, chart, inputRow, filterRow, table, deleteButton);
 
-        /* Vbox is a vertical box; stacks elements on top of eachother */
-        VBox root = new VBox(10, inputRow, filterRow, table, deleteButton);
 
         /* Window setup */
-        Scene scene = new Scene(root, 600, 400);
+
+        ScrollPane scrollPane = new ScrollPane(root);
+        scrollPane.setFitToWidth(true); /* Stretch to window width*/
+
+        Scene scene = new Scene(scrollPane, 600, 600);
         stage.setTitle("Expense Tracker");
         stage.setScene(scene); /* put the scene inside the window */
         stage.show(); /* Actually show the window */
@@ -54,7 +62,7 @@ public class MainApp extends Application {
 
     /* builders */
 
-    private TableView<Expense> buildTable(ExpenseService expenseService) {
+    private TableView<Expense> buildTable() {
         /* Create an empty table to hold Expense objects; empty grid */
         TableView<Expense> table = new TableView<>();
 
@@ -85,7 +93,7 @@ public class MainApp extends Application {
         return table;
     }
 
-    private HBox buildInputRow(ExpenseService expenseService, TableView<Expense> table, String[] activeFilter) {
+    private HBox buildInputRow() {
         /* Input fields */
         TextField descField = new TextField();
         descField.setPromptText("Description");
@@ -111,7 +119,10 @@ public class MainApp extends Application {
                 expenseService.addExpense(desc, cat, amount);
 
                 /* Refresh the table with new ExpenseService items*/
-                refreshTable(table, expenseService, activeFilter[0]);
+                refreshTable();
+
+                /* Refresh the pie chart with new expense */
+                refreshPieChart();
 
                 /* Clear input fields */
                 descField.clear();
@@ -130,7 +141,7 @@ public class MainApp extends Application {
     }
 
 
-    private HBox buildFilterRow(ExpenseService expenseService, TableView<Expense> table, String[] activeFilter) {
+    private HBox buildFilterRow() {
 
         TextField filterField = new TextField();
         filterField.setPromptText("Filter Category");
@@ -149,7 +160,7 @@ public class MainApp extends Application {
                     return;
                 }
                 activeFilter[0] = filter;
-                refreshTable(table, expenseService, filter);
+                refreshTable();
 
                 /* Clear input fields */
                 filterField.clear();
@@ -174,7 +185,7 @@ public class MainApp extends Application {
     }
 
 
-    private Button buildDeleteButton(ExpenseService expenseService, TableView<Expense> table, String[] activeFilter) {
+    private Button buildDeleteButton() {
         Button deleteButton = new Button("Delete");
 
         /* Event handler - called when delete button is clicked */
@@ -189,7 +200,9 @@ public class MainApp extends Application {
 
                 /* Delete an expense in ExpenseService*/
                 expenseService.deleteExpense(selected);
-                refreshTable(table, expenseService, activeFilter[0]);
+
+                refreshTable();
+                refreshPieChart();
 
             } catch (IOException ex) {
                 showAlert("Error", "Error deleting: " + ex.getMessage());
@@ -199,15 +212,33 @@ public class MainApp extends Application {
         return deleteButton;
     }
 
+    private PieChart buildPieChart() {
+        PieChart chart = new PieChart();
+        chart.setTitle("Spending by Category");
+
+        expenseService.getSummaryByCategory()
+                .forEach((category, total) -> {
+                    chart.getData().add(new PieChart.Data(category, total));
+                });
+        return chart;
+    }
+
 
     /* Helpers */
-    private void refreshTable(TableView<Expense> table, ExpenseService expenseService, String activeFilter) {
+    private void refreshTable() {
         table.getItems().clear();
-        if (activeFilter.isEmpty()) {
+        if (activeFilter[0].isEmpty()) {
             table.getItems().addAll(expenseService.getExpenses());
         } else {
-            table.getItems().addAll(expenseService.getExpensesByCategory(activeFilter));
+            table.getItems().addAll(expenseService.getExpensesByCategory(activeFilter[0]));
         }
+    }
+
+    private void refreshPieChart() {
+        chart.getData().clear();
+        expenseService.getSummaryByCategory()
+                .forEach((category, total) ->
+                        chart.getData().add(new PieChart.Data(category, total)));
     }
 
     private void showAlert(String title, String message) {

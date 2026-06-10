@@ -90,5 +90,12 @@ public class ExpenseService {
                 .toList();
     }
 
+    public Map<String, Double> getSummaryByCategory() {
+        return expenses.stream()
+                .collect(Collectors.groupingBy(
+                        Expense::getCategory,
+                        Collectors.summingDouble(Expense::getAmount)
+                ));
+    }
 
 }
