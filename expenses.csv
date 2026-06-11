@@ -1,6 +1,7 @@
-Coffee,Food,3.5
-Tea,Food,2.5
-Bus ticket,Transport,4.5
-Gas,Transport,5.5
-Shoes,Fashion,25.5
-Gas,Transport,60.0
+Coffee,Food,3.5,2026-06-11
+Tea,Food,2.5,2026-06-11
+Bus ticket,Transport,5.0,2026-06-11
+Gas,Transport,50.0,2026-06-11
+New Shoes,Fashion,40.0,2026-06-11
+Groceries,Food,1.0,2026-06-11
+Desc,Cat,0.0,2026-06-11

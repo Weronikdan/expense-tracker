@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.layout.HBox;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 /*
@@ -50,14 +51,14 @@ public class MainApp extends Application {
         Button deleteButton = buildDeleteButton();
 
         /* Vbox is a vertical box; stacks elements on top of each other */
-        VBox root = new VBox(10, chart, inputRow, filterRow, table, deleteButton);
+        VBox root = new VBox(10, chart, filterRow, table, inputRow, deleteButton);
 
         /* Window setup */
 
         ScrollPane scrollPane = new ScrollPane(root);
         scrollPane.setFitToWidth(true); /* Stretch to window width*/
 
-        Scene scene = new Scene(scrollPane, 600, 600);
+        Scene scene = new Scene(scrollPane, 800, 600);
         stage.setTitle("Expense Tracker");
         stage.setScene(scene); /* put the scene inside the window */
         stage.show(); /* Actually show the window */
@@ -87,8 +88,12 @@ public class MainApp extends Application {
         amountCol.setCellValueFactory(e -> new SimpleStringProperty(
                 String.format("£%.2f", e.getValue().getAmount())));
 
+        TableColumn<Expense, String> dateCol = new TableColumn<>("Date");
+        dateCol.setCellValueFactory(e -> new SimpleStringProperty(
+                e.getValue().getDate().toString()));
+
         /* Add all three columns to the table */
-        table.getColumns().addAll(descCol, catCol, amountCol);
+        table.getColumns().addAll(descCol, catCol, amountCol, dateCol);
 
         /* Fill the table with the expenses from Expense service on initial load */
         table.getItems().addAll(expenseService.getExpenses());
@@ -108,7 +113,12 @@ public class MainApp extends Application {
         TextField amountField = new TextField();
         amountField.setPromptText("Amount");
 
+        DatePicker datePicker = new DatePicker();
+
+
         Button addButton = new Button("Add");
+        datePicker.setValue(LocalDate.now()); /* Today is default value */
+        datePicker.setPromptText("Date");
 
         /* Event handler - called when add button is clicked */
         addButton.setOnAction(e -> {
@@ -118,6 +128,7 @@ public class MainApp extends Application {
                 String desc = descField.getText();
                 String cat = categoryComboBox.getValue();
                 double amount = Double.parseDouble(amountField.getText().replace(",", "."));
+                LocalDate date = datePicker.getValue();
 
                 if (desc.isEmpty() || cat.isEmpty()) {
                     showAlert("Invalid input", "Please fill in all fields.");
@@ -125,7 +136,7 @@ public class MainApp extends Application {
                 }
 
                 /* Create a new expense in ExpenseService*/
-                expenseService.addExpense(desc, cat, amount);
+                expenseService.addExpense(desc, cat, amount, date);
 
                 /* Refresh the table with new ExpenseService items*/
                 refreshTable();
@@ -146,7 +157,7 @@ public class MainApp extends Application {
         });
 
         /* HBox is a horizontal box; places elements next to each other. 10 is the spacing in px between items. */
-        return new HBox(10, descField, categoryComboBox, amountField, addButton);
+        return new HBox(10, descField, categoryComboBox, amountField, datePicker, addButton);
     }
 
 

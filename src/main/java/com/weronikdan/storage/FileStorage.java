@@ -4,6 +4,7 @@ import com.weronikdan.model.Expense;
 
 import java.io.IOException;
 import java.io.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,8 @@ public class FileStorage {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                expenses.add(new Expense(parts[0], parts[1], Double.parseDouble(parts[2])));
+                LocalDate date = LocalDate.parse(parts[3]);
+                expenses.add(new Expense(parts[0], parts[1], Double.parseDouble(parts[2]), date));
             }
         }
         return expenses;

@@ -3,6 +3,7 @@ package com.weronikdan;
 import com.weronikdan.service.ExpenseService;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Scanner;
 
 public class Main {
@@ -34,7 +35,7 @@ public class Main {
                     System.out.print("Enter the amount: ");
                     try {
                         double amount = Double.parseDouble(scanner.nextLine().replace(",", "."));
-                        expenseService.addExpense(description, category, amount);
+                        expenseService.addExpense(description, category, amount, LocalDate.now());
                     } catch (NumberFormatException e){
                         System.out.println("Invalid amount, please enter a number.");
                     } catch (IOException e){

@@ -3,6 +3,7 @@ package com.weronikdan.service;
 import com.weronikdan.model.Expense;
 import com.weronikdan.storage.FileStorage;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.io.IOException;
 import java.util.Map;
@@ -19,8 +20,8 @@ public class ExpenseService {
         this.expenses = storage.load();
     }
 
-    public void addExpense(String description, String category, double amount) throws IOException {
-        this.expenses.add(new Expense(description, category, amount));
+    public void addExpense(String description, String category, double amount, LocalDate date) throws IOException {
+        this.expenses.add(new Expense(description, category, amount, date));
         storage.save(this.expenses);
     }
 
