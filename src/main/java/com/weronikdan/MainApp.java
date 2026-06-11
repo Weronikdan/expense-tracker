@@ -28,6 +28,8 @@ public class MainApp extends Application {
     private TableView<Expense> table;
     private final String[] activeFilter = {""};
     private PieChart chart;
+    private ComboBox<String> categoryComboBox;
+    private ComboBox<String> filterComboBox;
 
     public static void main(String[] args) {
         launch(args);
@@ -39,6 +41,8 @@ public class MainApp extends Application {
         expenseService = new ExpenseService();
         table = buildTable();
         chart = buildPieChart();
+        categoryComboBox = new ComboBox<>();
+        filterComboBox = new ComboBox<>();
 
         /* HBox is a horizontal box; places elements next to each other. 10 is the spacing in px between items. */
         HBox inputRow = buildInputRow();
@@ -47,7 +51,6 @@ public class MainApp extends Application {
 
         /* Vbox is a vertical box; stacks elements on top of each other */
         VBox root = new VBox(10, chart, inputRow, filterRow, table, deleteButton);
-
 
         /* Window setup */
 
@@ -98,8 +101,9 @@ public class MainApp extends Application {
         TextField descField = new TextField();
         descField.setPromptText("Description");
 
-        TextField catField = new TextField();
-        catField.setPromptText("Category");
+        categoryComboBox.getItems().addAll(expenseService.getCategories());
+        categoryComboBox.setEditable(true);
+        categoryComboBox.setPromptText("Category");
 
         TextField amountField = new TextField();
         amountField.setPromptText("Amount");
@@ -112,8 +116,13 @@ public class MainApp extends Application {
 
                 /* user input */
                 String desc = descField.getText();
-                String cat = catField.getText();
+                String cat = categoryComboBox.getValue();
                 double amount = Double.parseDouble(amountField.getText().replace(",", "."));
+
+                if (desc.isEmpty() || cat.isEmpty()) {
+                    showAlert("Invalid input", "Please fill in all fields.");
+                    return;
+                }
 
                 /* Create a new expense in ExpenseService*/
                 expenseService.addExpense(desc, cat, amount);
@@ -123,65 +132,43 @@ public class MainApp extends Application {
 
                 /* Refresh the pie chart with new expense */
                 refreshPieChart();
+                refreshCategoryList();
 
                 /* Clear input fields */
                 descField.clear();
-                catField.clear();
                 amountField.clear();
 
             } catch (NumberFormatException ex) {
-                showAlert("Invalid input", "Please fill in all fields.");
+                showAlert("Invalid input", ex.getMessage());
             } catch (IOException ex) {
                 showAlert("Error", "Error saving: " + ex.getMessage());
             }
         });
 
         /* HBox is a horizontal box; places elements next to each other. 10 is the spacing in px between items. */
-        return new HBox(10, descField, catField, amountField, addButton);
+        return new HBox(10, descField, categoryComboBox, amountField, addButton);
     }
 
 
     private HBox buildFilterRow() {
 
-        TextField filterField = new TextField();
-        filterField.setPromptText("Filter Category");
+        filterComboBox.getItems().addAll(expenseService.getCategories());
+        filterComboBox.setEditable(false);
+        filterComboBox.setPromptText("Category");
 
-        Button filterButton = new Button("Filter");
+        filterComboBox.setOnAction(e -> {
+            /* user selection */
+            String filter = filterComboBox.getValue();
+            if (filter == null) return;
 
-        /* Event handler - called when filter button is clicked */
-        filterButton.setOnAction(e -> {
-            try {
-                /* user input */
-                String filter = filterField.getText();
-
-                List<Expense> filtered = expenseService.getExpensesByCategory(filter);
-                if (filtered.isEmpty()) {
-                    showAlert("No results", "No expenses found for: " + filter);
-                    return;
-                }
-                activeFilter[0] = filter;
-                refreshTable();
-
-                /* Clear input fields */
-                filterField.clear();
-
-            } catch (Exception ex) {
-                showAlert("Error", "Something went wrong: " + ex.getMessage());
-            }
+            activeFilter[0] = filter;
+            refreshTable();
         });
 
         /* CLEAR FILTER  */
+        Button clearButton = buildClearButton();
 
-        Button clearButton = new Button("Clear");
-
-        /* Event handler - called when clear button is clicked */
-        clearButton.setOnAction(e -> {
-            table.getItems().clear();
-            table.getItems().addAll(expenseService.getExpenses());
-            activeFilter[0] = "";
-        });
-
-        return new HBox(10, filterField, filterButton, clearButton);
+        return new HBox(10, filterComboBox, clearButton);
     }
 
 
@@ -203,6 +190,7 @@ public class MainApp extends Application {
 
                 refreshTable();
                 refreshPieChart();
+                refreshCategoryList();
 
             } catch (IOException ex) {
                 showAlert("Error", "Error deleting: " + ex.getMessage());
@@ -210,6 +198,19 @@ public class MainApp extends Application {
             }
         });
         return deleteButton;
+    }
+
+    private Button buildClearButton() {
+        Button clearButton = new Button("Clear");
+
+        /* Event handler - called when clear button is clicked */
+        clearButton.setOnAction(e -> {
+            activeFilter[0] = "";
+            refreshTable();
+            refreshFilterList();
+        });
+
+        return clearButton;
     }
 
     private PieChart buildPieChart() {
@@ -240,6 +241,27 @@ public class MainApp extends Application {
                 .forEach((category, total) ->
                         chart.getData().add(new PieChart.Data(category, total)));
     }
+
+    private void refreshCategoryList() {
+        categoryComboBox.getItems().clear();
+        categoryComboBox.getItems().addAll(expenseService.getCategories());
+        categoryComboBox.getEditor().clear();
+        categoryComboBox.setValue(null);
+
+        refreshFilterList();
+    }
+
+    private void refreshFilterList() {
+        filterComboBox.getItems().clear();
+        filterComboBox.getItems().addAll(expenseService.getCategories());
+
+        if (!activeFilter[0].isEmpty()) {
+            filterComboBox.setValue(activeFilter[0]);
+        } else {
+            filterComboBox.setValue(null);
+        }
+    }
+
 
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
