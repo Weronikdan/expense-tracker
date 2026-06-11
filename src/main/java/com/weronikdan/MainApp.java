@@ -4,7 +4,7 @@ import com.weronikdan.model.Expense;
 import com.weronikdan.service.ExpenseService;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.chart.PieChart;
+import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -13,6 +13,7 @@ import javafx.scene.layout.HBox;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /*
 *   Hierarchy:
@@ -28,7 +29,8 @@ public class MainApp extends Application {
     private ExpenseService expenseService;
     private TableView<Expense> table;
     private final String[] activeFilter = {""};
-    private PieChart chart;
+    private PieChart pieChart;
+    private BarChart<String, Number> barChart;
     private ComboBox<String> categoryComboBox;
     private ComboBox<String> filterComboBox;
 
@@ -41,17 +43,17 @@ public class MainApp extends Application {
 
         expenseService = new ExpenseService();
         table = buildTable();
-        chart = buildPieChart();
+        pieChart = buildPieChart();
+        barChart = buildBarChart();
         categoryComboBox = new ComboBox<>();
         filterComboBox = new ComboBox<>();
 
         /* HBox is a horizontal box; places elements next to each other. 10 is the spacing in px between items. */
         HBox inputRow = buildInputRow();
         HBox filterRow = buildFilterRow();
-        Button deleteButton = buildDeleteButton();
 
         /* Vbox is a vertical box; stacks elements on top of each other */
-        VBox root = new VBox(10, chart, filterRow, table, inputRow, deleteButton);
+        VBox root = new VBox(10, pieChart, barChart, filterRow, table, inputRow);
 
         /* Window setup */
 
@@ -93,7 +95,7 @@ public class MainApp extends Application {
                 e.getValue().getDate().toString()));
 
         /* Add all three columns to the table */
-        table.getColumns().addAll(descCol, catCol, amountCol, dateCol);
+        table.getColumns().addAll(dateCol, descCol, catCol, amountCol);
 
         /* Fill the table with the expenses from Expense service on initial load */
         table.getItems().addAll(expenseService.getExpenses());
@@ -143,6 +145,7 @@ public class MainApp extends Application {
 
                 /* Refresh the pie chart with new expense */
                 refreshPieChart();
+                refreshBarChart();
                 refreshCategoryList();
 
                 /* Clear input fields */
@@ -176,15 +179,20 @@ public class MainApp extends Application {
             refreshTable();
         });
 
-        /* CLEAR FILTER  */
         Button clearButton = buildClearButton();
+        Button deleteButton = buildDeleteButton();
 
-        return new HBox(10, filterComboBox, clearButton);
+        return new HBox(10, filterComboBox, clearButton, deleteButton);
     }
 
 
     private Button buildDeleteButton() {
         Button deleteButton = new Button("Delete");
+        deleteButton.setDisable(true);
+
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            deleteButton.setDisable(newVal == null);
+        });
 
         /* Event handler - called when delete button is clicked */
         deleteButton.setOnAction(e -> {
@@ -235,6 +243,29 @@ public class MainApp extends Application {
         return chart;
     }
 
+    private BarChart<String, Number> buildBarChart() {
+        CategoryAxis xAxis = new CategoryAxis();
+        NumberAxis yAxis = new NumberAxis();
+        xAxis.setLabel("Month");
+        yAxis.setLabel("Amount (£)");
+
+        BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
+        barChart.setTitle("Monthly Spending");
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Spending");
+
+        expenseService.getMonthlyTotals()
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> series.getData().add(
+                        new XYChart.Data<>(entry.getKey(), entry.getValue())));
+
+        barChart.getData().add(series);
+        return barChart;
+    }
+
 
     /* Helpers */
     private void refreshTable() {
@@ -247,10 +278,25 @@ public class MainApp extends Application {
     }
 
     private void refreshPieChart() {
-        chart.getData().clear();
+        pieChart.getData().clear();
         expenseService.getSummaryByCategory()
                 .forEach((category, total) ->
-                        chart.getData().add(new PieChart.Data(category, total)));
+                        pieChart.getData().add(new PieChart.Data(category, total)));
+    }
+
+    private void refreshBarChart() {
+        barChart.getData().clear();
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Spending");
+
+        expenseService.getMonthlyTotals()
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> series.getData().add(
+                        new XYChart.Data<>(entry.getKey(), entry.getValue())));
+
+        barChart.getData().add(series);
     }
 
     private void refreshCategoryList() {

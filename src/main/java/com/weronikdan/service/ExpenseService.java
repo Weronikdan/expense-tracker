@@ -106,4 +106,13 @@ public class ExpenseService {
                 ));
     }
 
+    public Map<String, Double> getMonthlyTotals() {
+        return expenses.stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getDate().getYear() + "-" +
+                                String.format("%02d", e.getDate().getMonthValue()),
+                        Collectors.summingDouble(Expense::getAmount)
+                ));
+    }
+
 }
