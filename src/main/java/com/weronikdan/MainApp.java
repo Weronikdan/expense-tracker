@@ -3,9 +3,13 @@ package com.weronikdan;
 import com.weronikdan.model.Expense;
 import com.weronikdan.service.ExpenseService;
 import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.beans.property.SimpleStringProperty;
@@ -43,34 +47,75 @@ public class MainApp extends Application {
 
         expenseService = new ExpenseService();
         table = buildTable();
-        pieChart = buildPieChart();
-        barChart = buildBarChart();
+
         categoryComboBox = new ComboBox<>();
         filterComboBox = new ComboBox<>();
 
-        /* HBox is a horizontal box; places elements next to each other. 10 is the spacing in px between items. */
+        HBox header = buildHeader();
         HBox inputRow = buildInputRow();
         HBox filterRow = buildFilterRow();
+        HBox chartRow = buildChartRow();
+        filterRow.getStyleClass().add("card");
+        filterRow.setPadding(new Insets(8, 0, 8, 0));
+        inputRow.getStyleClass().add("card");
 
         /* Vbox is a vertical box; stacks elements on top of each other */
-        VBox root = new VBox(10, pieChart, barChart, filterRow, table, inputRow);
+        VBox root = new VBox(16, header, chartRow, filterRow, table, inputRow);
+
+        root.setPadding(new Insets(20));
+        root.setMaxWidth(900);
+        root.setStyle("-fx-alignment: center;");
+        root.setAlignment(javafx.geometry.Pos.TOP_CENTER);
+
+        VBox wrapper = new VBox(root);
+        wrapper.setAlignment(javafx.geometry.Pos.TOP_CENTER);
+        wrapper.setStyle("-fx-background-color: #f9f9f9;");
 
         /* Window setup */
 
-        ScrollPane scrollPane = new ScrollPane(root);
+        ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.setFitToWidth(true); /* Stretch to window width*/
+        //scrollPane.setFitToHeight(true);
 
-        Scene scene = new Scene(scrollPane, 800, 600);
+        Scene scene = new Scene(scrollPane, 1000, 800);
         stage.setTitle("Expense Tracker");
         stage.setScene(scene); /* put the scene inside the window */
         stage.show(); /* Actually show the window */
+
+        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
     }
 
     /* builders */
 
+    private HBox buildHeader() {
+        Label title = new Label("Expense Tracker");
+        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label user = new Label("Weronika");
+        Label date = new Label(LocalDate.now().getMonth() + " " + LocalDate.now().getYear());
+
+        VBox userInfo = new VBox(2, user, date);
+        userInfo.setAlignment(Pos.CENTER_RIGHT);
+
+        HBox header = new HBox(10, title, spacer, userInfo);
+        header.getStyleClass().add("header");
+        return header;
+    }
+
+    private HBox buildChartRow() {
+        pieChart = buildPieChart();
+        barChart = buildBarChart();
+
+        return new HBox(10, pieChart, barChart);
+    }
+
     private TableView<Expense> buildTable() {
         /* Create an empty table to hold Expense objects; empty grid */
         TableView<Expense> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         /* Create a table column with title description; <holding expense objects, display string>*/
         TableColumn<Expense, String> descCol = new TableColumn<>("Description");
@@ -88,7 +133,7 @@ public class MainApp extends Application {
 
         TableColumn<Expense, String> amountCol = new TableColumn<>("Amount");
         amountCol.setCellValueFactory(e -> new SimpleStringProperty(
-                String.format("£%.2f", e.getValue().getAmount())));
+                String.format("%.2f kr", e.getValue().getAmount())));
 
         TableColumn<Expense, String> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(e -> new SimpleStringProperty(
@@ -120,6 +165,7 @@ public class MainApp extends Application {
 
         Button addButton = new Button("Add");
         datePicker.setValue(LocalDate.now()); /* Today is default value */
+        datePicker.setShowWeekNumbers(false);
         datePicker.setPromptText("Date");
 
         /* Event handler - called when add button is clicked */
@@ -159,6 +205,10 @@ public class MainApp extends Application {
             }
         });
 
+        HBox.setHgrow(descField, Priority.ALWAYS);
+        HBox.setHgrow(amountField, Priority.ALWAYS);
+        HBox.setHgrow(categoryComboBox, Priority.ALWAYS);
+
         /* HBox is a horizontal box; places elements next to each other. 10 is the spacing in px between items. */
         return new HBox(10, descField, categoryComboBox, amountField, datePicker, addButton);
     }
@@ -168,7 +218,8 @@ public class MainApp extends Application {
 
         filterComboBox.getItems().addAll(expenseService.getCategories());
         filterComboBox.setEditable(false);
-        filterComboBox.setPromptText("Category");
+        filterComboBox.setPrefWidth(300);
+        filterComboBox.setPromptText("Filter by Category");
 
         filterComboBox.setOnAction(e -> {
             /* user selection */
@@ -182,7 +233,10 @@ public class MainApp extends Application {
         Button clearButton = buildClearButton();
         Button deleteButton = buildDeleteButton();
 
-        return new HBox(10, filterComboBox, clearButton, deleteButton);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        return new HBox(10, filterComboBox, clearButton, spacer, deleteButton);
     }
 
 
@@ -234,6 +288,7 @@ public class MainApp extends Application {
 
     private PieChart buildPieChart() {
         PieChart chart = new PieChart();
+        chart.setPrefHeight(400);
         chart.setTitle("Spending by Category");
 
         expenseService.getSummaryByCategory()
@@ -247,12 +302,13 @@ public class MainApp extends Application {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         xAxis.setLabel("Month");
-        yAxis.setLabel("Amount (£)");
+        yAxis.setLabel("Amount (SEK)");
 
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
         barChart.setTitle("Monthly Spending");
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
+        barChart.setPrefHeight(400);
         series.setName("Spending");
 
         expenseService.getMonthlyTotals()

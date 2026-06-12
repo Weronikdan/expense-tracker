@@ -30,9 +30,13 @@ public class FileStorage {
         try(BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                if (line.isEmpty()) continue;
                 String[] parts = line.split(",");
-                LocalDate date = LocalDate.parse(parts[3]);
-                expenses.add(new Expense(parts[0], parts[1], Double.parseDouble(parts[2]), date));
+                String description = parts[0].trim();
+                String category = parts[1].trim();
+                double amount = Double.parseDouble(parts[2].trim());
+                LocalDate date = LocalDate.parse(parts[3].trim());
+                expenses.add(new Expense(description, category, amount, date));
             }
         }
         return expenses;
