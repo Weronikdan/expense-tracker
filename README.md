@@ -39,7 +39,7 @@ mvn javafx:run
  
 ## Data Storage
  
-Expenses are stored locally in `expenses.csv` in the project root directory. This file is excluded from version control to protect personal financial data.
+Expenses are stored locally in `expenses.csv` in the project root directory. 
  
 The CSV format is:
 ```
